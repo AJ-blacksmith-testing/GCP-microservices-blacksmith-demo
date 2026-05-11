@@ -1,0 +1,113 @@
+name: Full CI Benchmark - Tests + Docker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  go-unit-tests:
+    name: GitHub Runner - Go Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      - name: Run Go unit tests
+        run: |
+          for GO_PACKAGE in "shippingservice" "productcatalogservice" "frontend/validator"; do
+            echo "Testing $GO_PACKAGE..."
+            pushd src/$GO_PACKAGE
+            go test
+            popd
+          done
+
+  csharp-unit-tests:
+    name: GitHub Runner - C# Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0'
+
+      - name: Run C# unit tests
+        run: |
+          dotnet test src/cartservice/
+
+  docker-builds:
+    name: GitHub Runner - Build Docker Image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs:
+      - go-unit-tests
+      - csharp-unit-tests
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            dockerfile: ./src/frontend/Dockerfile
+            context: ./src/frontend
+
+          - service: cartservice
+            dockerfile: ./src/cartservice/src/Dockerfile
+            context: ./src/cartservice/src
+
+          - service: productcatalogservice
+            dockerfile: ./src/productcatalogservice/Dockerfile
+            context: ./src/productcatalogservice
+
+          - service: checkoutservice
+            dockerfile: ./src/checkoutservice/Dockerfile
+            context: ./src/checkoutservice
+
+          - service: currencyservice
+            dockerfile: ./src/currencyservice/Dockerfile
+            context: ./src/currencyservice
+
+          - service: emailservice
+            dockerfile: ./src/emailservice/Dockerfile
+            context: ./src/emailservice
+
+          - service: paymentservice
+            dockerfile: ./src/paymentservice/Dockerfile
+            context: ./src/paymentservice
+
+          - service: recommendationservice
+            dockerfile: ./src/recommendationservice/Dockerfile
+            context: ./src/recommendationservice
+
+          - service: shippingservice
+            dockerfile: ./src/shippingservice/Dockerfile
+            context: ./src/shippingservice
+
+          - service: adservice
+            dockerfile: ./src/adservice/Dockerfile
+            context: ./src/adservice
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show service being built
+        run: |
+          echo "Building ${{ matrix.service }}"
+          echo "Dockerfile: ${{ matrix.dockerfile }}"
+          echo "Context: ${{ matrix.context }}"
+
+      - name: Build Docker image without cache
+        run: |
+          docker build \
+            --no-cache \
+            -f "${{ matrix.dockerfile }}" \
+            -t online-boutique-${{ matrix.service }}:benchmark \
+            "${{ matrix.context }}"
