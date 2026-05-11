@@ -28,7 +28,7 @@ jobs:
 
   csharp-unit-tests:
     name: Blacksmith Runner - C# Unit Tests
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
       - name: Checkout repo
@@ -45,7 +45,7 @@ jobs:
 
   docker-builds:
     name: Blacksmith Runner - Build Docker Image (${{ matrix.service }})
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs:
       - go-unit-tests
       - csharp-unit-tests
