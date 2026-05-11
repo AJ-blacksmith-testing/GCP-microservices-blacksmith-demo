@@ -1,12 +1,12 @@
-name: Full CI Benchmark - Tests + Docker
+name: Full CI Benchmark - Blacksmith
 
 on:
   workflow_dispatch:
 
 jobs:
   go-unit-tests:
-    name: GitHub Runner - Go Unit Tests
-    runs-on: ubuntu-latest
+    name: Blacksmith Runner - Go Unit Tests
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Checkout repo
@@ -27,8 +27,8 @@ jobs:
           done
 
   csharp-unit-tests:
-    name: GitHub Runner - C# Unit Tests
-    runs-on: ubuntu-latest
+    name: Blacksmith Runner - C# Unit Tests
+    runs-on: blacksmith-2vcpu-ubuntu-2404
 
     steps:
       - name: Checkout repo
@@ -44,8 +44,8 @@ jobs:
           dotnet test src/cartservice/
 
   docker-builds:
-    name: GitHub Runner - Build Docker Image (${{ matrix.service }})
-    runs-on: ubuntu-latest
+    name: Blacksmith Runner - Build Docker Image (${{ matrix.service }})
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     needs:
       - go-unit-tests
       - csharp-unit-tests
