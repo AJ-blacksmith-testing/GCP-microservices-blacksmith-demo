@@ -1,4 +1,4 @@
-name: Docker Benchmark - 3 Services
+name: Docker Benchmark - Multi-Service
 
 on:
   workflow_dispatch:
@@ -23,6 +23,34 @@ jobs:
           - service: productcatalogservice
             dockerfile: ./src/productcatalogservice/Dockerfile
             context: ./src/productcatalogservice
+
+          - service: checkoutservice
+            dockerfile: ./src/checkoutservice/Dockerfile
+            context: ./src/checkoutservice
+
+          - service: currencyservice
+            dockerfile: ./src/currencyservice/Dockerfile
+            context: ./src/currencyservice
+
+          - service: emailservice
+            dockerfile: ./src/emailservice/Dockerfile
+            context: ./src/emailservice
+
+          - service: paymentservice
+            dockerfile: ./src/paymentservice/Dockerfile
+            context: ./src/paymentservice
+
+          - service: recommendationservice
+            dockerfile: ./src/recommendationservice/Dockerfile
+            context: ./src/recommendationservice
+
+          - service: shippingservice
+            dockerfile: ./src/shippingservice/Dockerfile
+            context: ./src/shippingservice
+
+          - service: adservice
+            dockerfile: ./src/adservice/Dockerfile
+            context: ./src/adservice
 
     steps:
       - name: Checkout repo
