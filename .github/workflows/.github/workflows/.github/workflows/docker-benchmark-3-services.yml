@@ -1,0 +1,31 @@
+name: Docker Benchmark - 3 Services
+
+on:
+  workflow_dispatch:
+
+jobs:
+  github-docker-build:
+    name: GitHub Runner - Build 3 Docker Images
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - frontend
+          - cartservice
+          - productcatalogservice
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Show service being built
+        run: echo "Building ${{ matrix.service }}"
+
+      - name: Build Docker image without cache
+        run: |
+          docker build \
+            --no-cache \
+            -t online-boutique-${{ matrix.service }}:benchmark \
+            ./src/${{ matrix.service }}
