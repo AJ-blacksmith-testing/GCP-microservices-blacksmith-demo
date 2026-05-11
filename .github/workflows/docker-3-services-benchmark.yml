@@ -5,27 +5,39 @@ on:
 
 jobs:
   github-docker-build:
-    name: GitHub Runner - Build 3 Docker Images
+    name: GitHub Runner - Build Docker Image (${{ matrix.service }})
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        service:
-          - frontend
-          - cartservice
-          - productcatalogservice
+        include:
+          - service: frontend
+            dockerfile: ./src/frontend/Dockerfile
+            context: ./src/frontend
+
+          - service: cartservice
+            dockerfile: ./src/cartservice/src/Dockerfile
+            context: ./src/cartservice/src
+
+          - service: productcatalogservice
+            dockerfile: ./src/productcatalogservice/Dockerfile
+            context: ./src/productcatalogservice
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Show service being built
-        run: echo "Building ${{ matrix.service }}"
+        run: |
+          echo "Building ${{ matrix.service }}"
+          echo "Dockerfile: ${{ matrix.dockerfile }}"
+          echo "Context: ${{ matrix.context }}"
 
       - name: Build Docker image without cache
         run: |
           docker build \
             --no-cache \
+            -f "${{ matrix.dockerfile }}" \
             -t online-boutique-${{ matrix.service }}:benchmark \
-            ./src/${{ matrix.service }}
+            "${{ matrix.context }}"
