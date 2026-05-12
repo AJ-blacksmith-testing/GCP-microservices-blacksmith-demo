@@ -1,0 +1,129 @@
+name: Full CI Benchmark - GitHub Optimized
+
+on:
+  workflow_dispatch:
+
+jobs:
+  go-unit-tests:
+    name: GitHub Optimized - Go Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Go with dependency cache
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+          cache: true
+          cache-dependency-path: |
+            src/shippingservice/go.sum
+            src/productcatalogservice/go.sum
+            src/frontend/validator/go.sum
+
+      - name: Run Go unit tests
+        run: |
+          for GO_PACKAGE in "shippingservice" "productcatalogservice" "frontend/validator"; do
+            echo "Testing $GO_PACKAGE..."
+            pushd src/$GO_PACKAGE
+            go test
+            popd
+          done
+
+  csharp-unit-tests:
+    name: GitHub Optimized - C# Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('src/cartservice/**/*.csproj', 'src/cartservice/**/packages.lock.json') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore C# dependencies
+        run: |
+          dotnet restore src/cartservice/
+
+      - name: Run C# unit tests
+        run: |
+          dotnet test src/cartservice/ --no-restore
+
+  docker-builds:
+    name: GitHub Optimized - Build Docker Image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs:
+      - go-unit-tests
+      - csharp-unit-tests
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            dockerfile: ./src/frontend/Dockerfile
+            context: ./src/frontend
+
+          - service: cartservice
+            dockerfile: ./src/cartservice/src/Dockerfile
+            context: ./src/cartservice/src
+
+          - service: productcatalogservice
+            dockerfile: ./src/productcatalogservice/Dockerfile
+            context: ./src/productcatalogservice
+
+          - service: checkoutservice
+            dockerfile: ./src/checkoutservice/Dockerfile
+            context: ./src/checkoutservice
+
+          - service: currencyservice
+            dockerfile: ./src/currencyservice/Dockerfile
+            context: ./src/currencyservice
+
+          - service: emailservice
+            dockerfile: ./src/emailservice/Dockerfile
+            context: ./src/emailservice
+
+          - service: paymentservice
+            dockerfile: ./src/paymentservice/Dockerfile
+            context: ./src/paymentservice
+
+          - service: recommendationservice
+            dockerfile: ./src/recommendationservice/Dockerfile
+            context: ./src/recommendationservice
+
+          - service: shippingservice
+            dockerfile: ./src/shippingservice/Dockerfile
+            context: ./src/shippingservice
+
+          - service: adservice
+            dockerfile: ./src/adservice/Dockerfile
+            context: ./src/adservice
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image with GitHub Actions cache
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: online-boutique-${{ matrix.service }}:benchmark
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
